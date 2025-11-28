@@ -25,20 +25,23 @@
       box-shadow: 0 0 10px #0003;
     }
 
-    .controls button {
+    .controls button, .modes button {
       padding: 10px 18px;
       font-size: 15px;
       border: none;
       border-radius: 6px;
       margin: 5px;
       cursor: pointer;
-      background: #2ecc71;
-      color: white;
       font-weight: 600;
+      color: white;
     }
 
     #pauseBtn { background:#e67e22; }
     #restartBtn { background:#d9534f; }
+    #startBtn { background:#27ae60; }
+
+    .modes button { background:#3498db; }
+    .modes button.active { background:#1b70b3; box-shadow:0 0 10px #1b70b3; }
 
     .info {
       margin-top: 10px;
@@ -83,6 +86,13 @@
 
   <h1>SNAKE GAME</h1>
 
+  <!-- Difficulty Buttons -->
+  <div class="modes">
+    <button id="easyBtn">Easy</button>
+    <button id="normalBtn" class="active">Normal</button>
+    <button id="hardBtn">Hard</button>
+  </div>
+
   <div id="game-wrapper">
     <canvas id="game" width="400" height="400"></canvas>
 
@@ -114,6 +124,10 @@
     const scoreEl = document.getElementById('score');
     const highEl = document.getElementById('high');
 
+    const easyBtn = document.getElementById('easyBtn');
+    const normalBtn = document.getElementById('normalBtn');
+    const hardBtn = document.getElementById('hardBtn');
+
     const CELL = 20;
     const COLS = canvas.width / CELL;
     const ROWS = canvas.height / CELL;
@@ -131,10 +145,25 @@
     let high = parseInt(localStorage.getItem('snake_high') || '0', 10);
     highEl.textContent = "High: " + high;
 
+    // ===============================
+    // DIFFICULTY SETTINGS
+    // ===============================
+    let difficultySpeed = 8; // default normal
+
+    function setDifficulty(speed, button) {
+      difficultySpeed = speed;
+
+      // highlight active mode
+      [easyBtn, normalBtn, hardBtn].forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+    }
+
+    easyBtn.onclick = () => setDifficulty(5, easyBtn);
+    normalBtn.onclick = () => setDifficulty(8, normalBtn);
+    hardBtn.onclick = () => setDifficulty(12, hardBtn);
+
     let lastTime = 0;
     let accumulator = 0;
-    const speed = 8;
-    const step = 1 / speed;
 
     /*============================
       GAME INIT
@@ -156,12 +185,11 @@
       scoreEl.textContent = "Score: 0";
 
       spawnFood();
-      draw(); // 🔥 Draw snake immediately
+      draw();
 
       overlay.style.display = "none";
       gameOverText.style.display = "none";
     }
-
 
     /*============================
       FOOD
@@ -230,13 +258,11 @@
     function draw() {
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // food
       ctx.beginPath();
       ctx.fillStyle = "#ff4444";
       ctx.arc(food.x*CELL + CELL/2, food.y*CELL + CELL/2, CELL/2-2, 0, Math.PI*2);
       ctx.fill();
 
-      // snake
       snake.forEach((p,i)=>{
         drawCell(p.x,p.y, i===0 ? "#27ae60":"#2ecc71");
       });
@@ -247,8 +273,11 @@
     ============================*/
     function loop(ts) {
       if (!lastTime) lastTime = ts;
-      const delta = (ts-lastTime)/1000;
+
+      const delta = (ts - lastTime) / 1000;
       lastTime = ts;
+
+      const step = 1 / difficultySpeed; // <-- difficulty applied here
 
       if (running && !paused) {
         accumulator += delta;
@@ -296,7 +325,7 @@
     startBtn.onclick = () => {
       init();
       lastTime = 0;
-      running = true;  // 🔥 enable movement
+      running = true;
     };
 
     restartBtn.onclick = () => {
@@ -307,7 +336,6 @@
 
     pauseBtn.onclick = () => togglePause();
 
-    // load snake immediately
     init();
     draw();
     requestAnimationFrame(loop);
